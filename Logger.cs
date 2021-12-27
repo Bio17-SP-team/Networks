@@ -21,6 +21,11 @@ namespace HTTPServer
             sr.WriteLine(now);
             sr.Write("Message : ");
             sr.WriteLine(ex.Message);
+            ;
+        }
+
+        public static void close()
+        {
             sr.Close();
         }
     }
