@@ -65,8 +65,7 @@ namespace HTTPServer
                     if (receivedLen == 0)
                     {
                         Console.WriteLine("Client: {0} ended the connection", clientSock.RemoteEndPoint);
-                        break;
-                    }
+                        break;                    }
 
                     // TODO: Create a Request object using received request string
 
@@ -78,7 +77,7 @@ namespace HTTPServer
                     Response response = HandleRequest(request);
 
                     // TODO: Send Response back to client
-
+                    
                     clientSock.Send(Encoding.ASCII.GetBytes(response.ResponseString));
 
                 }
@@ -95,7 +94,7 @@ namespace HTTPServer
 
         Response HandleRequest(Request request)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
             string content;
             try
             {
@@ -112,9 +111,8 @@ namespace HTTPServer
                     GetRedirectionPagePathIFExist(filepath);
                     //TODO: check file exists 
                     //TODO: read the physical file
-                    LoadDefaultPage(filepath);
-                    // Create OK response
                     content = LoadDefaultPage(filepath);
+                    // Create OK response
                     Response res = new Response(StatusCode.OK, "text/html", content, "");
                     return res;
                 }
@@ -123,9 +121,9 @@ namespace HTTPServer
                     Response res = new Response(StatusCode.BadRequest, "text/html", LoadDefaultPage(Configuration.BadRequestDefaultPageName), "");
                     return res;
 
-                }
-
-
+                } 
+                    
+              
             }
             catch (Exception ex)
             {
@@ -143,7 +141,14 @@ namespace HTTPServer
         {
             // using Configuration.RedirectionRules return the redirected page path if exists else returns empty
 
-
+            foreach (KeyValuePair<string, string> entry in Configuration.RedirectionRules)
+            {
+                // do something with entry.Value or entry.Key
+                if (entry.Key == relativePath)
+                {
+                    return entry.Value;
+                }
+            }
 
             return string.Empty;
         }
@@ -172,29 +177,19 @@ namespace HTTPServer
             try
             {
                 // TODO: using the filepath paramter read the redirection rules from file 
-
+                Configuration.RedirectionRules = new Dictionary<string, string>();
                 using (StreamReader file = new StreamReader(filePath))
                 {
-                    while (file.Peek() >= 0)
+                    while(file.Peek() >= 0)
                     {
                         string filepathread = file.ReadLine();
-
-                        string[] header_linessplitresp = filepathread.Split(',');
+                        string[]  header_linessplitresp = filepathread.Split(',');
+                        // then fill Configuration.RedirectionRules dictionary 
                         Configuration.RedirectionRules.Add(header_linessplitresp[0], header_linessplitresp[1]);
                     }
                 }
 
-
-
-
-
-                throw new NotImplementedException();
-
-
-                // then fill Configuration.RedirectionRules dictionary 
-
-
-
+                //throw new NotImplementedException();
             }
             catch (Exception ex)
             {
