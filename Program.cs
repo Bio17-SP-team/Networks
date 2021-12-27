@@ -18,6 +18,7 @@ namespace HTTPServer
             Server s1 = new Server(1000, "redirectionRules.txt");
             Console.WriteLine("Started...");
             s1.StartServer();
+            Logger.close();
         }
 
         static void CreateRedirectionRulesFile()
