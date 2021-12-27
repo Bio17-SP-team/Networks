@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -66,9 +66,6 @@ namespace HTTPServer
         /// <returns>True if parsing succeeds, false otherwise.</returns>
         public bool ParseRequest()
         {
-
-
-
             //TODO: parse the receivedRequest using the \r\n delimeter   
 
             // check that there is atleast 3 lines: Request line, Host Header, Blank line (usually 4 lines with the last empty line for empty content)
@@ -88,18 +85,21 @@ namespace HTTPServer
                 requestLineString = Lines[0];
                 BlankLine = Lines[4];
                 headerLineString = Lines[2];
+                ParseRequestLine();
+                ValidateBlankLine();
+                ValidateIsURI(uri);
+                LoadHeaderLines();
+                
                 return true;
 
             }
-            ParseRequestLine();
-            ValidateIsURI(uri);
-            LoadHeaderLines();
-            ValidateBlankLine();
+            
+            
 
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
 
 
-
+            return false;
         }
 
         private bool ParseRequestLine()
@@ -142,7 +142,7 @@ namespace HTTPServer
 
             }
 
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
 
 
 
@@ -175,10 +175,10 @@ namespace HTTPServer
             {
                 return true;
             }
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
 
 
-
+            return false;
         }
 
         private bool ValidateBlankLine()
@@ -189,8 +189,8 @@ namespace HTTPServer
                 return true;
             }
 
-            throw new NotImplementedException();
-
+            //throw new NotImplementedException();
+            return false;
         }
 
     }
