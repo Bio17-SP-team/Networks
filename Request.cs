@@ -29,23 +29,10 @@ namespace HTTPServer
     class Request
     {
         string[] Lines;
-        string[] requestLines;
-        string[] header;
-        string[] headerLines_betweenvalu;
-        string[] header_value_tile;
-        string[] header_linessplit;
-        string[] header_linespre;
-        string BlankLine;
-        string uri;
-
-
-
         string requestLineString;
-        string headerLineString;
-
         RequestMethod method;
         public string relativeURI;
-        Dictionary<string, string> headerLines;
+        Dictionary<string, string> headerLines = new Dictionary<string, string>();
 
         public Dictionary<string, string> HeaderLines
         {
@@ -66,130 +53,63 @@ namespace HTTPServer
         /// <returns>True if parsing succeeds, false otherwise.</returns>
         public bool ParseRequest()
         {
-            //TODO: parse the receivedRequest using the \r\n delimeter   
-
+            //TODO: parse the receivedRequest using the \r\n delimeter
+            string[] lineSeparators = new string[] { "\r\n" };
+            this.Lines = this.requestString.Split(lineSeparators, StringSplitOptions.None);
             // check that there is atleast 3 lines: Request line, Host Header, Blank line (usually 4 lines with the last empty line for empty content)
-
+            if (Lines.Length < 3) return false;
             // Parse Request line
-
+            if (!ParseRequestLine()) return false;
             // Validate blank line exists
-
+            if (!ValidateBlankLine()) return false;
             // Load header lines into HeaderLines dictionary
-            ///req/r1/nb2 header/r3/n4/r5/n6/r7/n8
-
-            Lines = requestString.Split('\r', '\n');
-            //Line= request - header - blank 
-
-            if (Lines.Length == 3)
-            {
-                requestLineString = Lines[0];
-                BlankLine = Lines[4];
-                headerLineString = Lines[2];
-                ParseRequestLine();
-                ValidateBlankLine();
-                ValidateIsURI(uri);
-                LoadHeaderLines();
-                
-                return true;
-
-            }
-            
-            
-
-            //throw new NotImplementedException();
-
-
-            return false;
+            if (!LoadHeaderLines()) return false;
+            return true;
         }
 
         private bool ParseRequestLine()
         {
+            string[] requestLines = this.Lines[0].Split(' ');
+            if (requestLines.Length < 3) return false;
+            this.method = (RequestMethod)Enum.Parse(typeof(RequestMethod), requestLines[0]);
+            this.relativeURI = requestLines[1].Substring(1);
 
+            if (requestLines[2] == "HTTP/1.0")
+                this.httpVersion = HTTPVersion.HTTP10;
+            else if (requestLines[2] == "HTTP/1.1")
+                this.httpVersion = HTTPVersion.HTTP11;
+            else if (requestLines[2] == "HTTP/0.9")
+                this.httpVersion = HTTPVersion.HTTP09;
 
-            requestLines = requestLineString.Split(' ');
-            uri = requestLines[1];
-
-            // HTTPVersion myvar = HTTPVersion.getnames;
-            //bool exist= Enum.IsDefined(typeof(HTTPVersion), requestLines[0]);
-            // string my = requestLines[0];
-            // HTTPVersion myvar= requestLines[0].p
-
-
-
-            if (requestLines.Length == 3)
-            {
-                if (requestLines[0] == "GET")
-                    method = RequestMethod.GET;
-                else if (requestLines[0] == "POST")
-                    method = RequestMethod.POST;
-                else if (requestLines[0] == "HEAD")
-                    method = RequestMethod.HEAD;
-
-                if (requestLines[2] == "HTTP/1.0")
-                    httpVersion = HTTPVersion.HTTP10;
-                else if (requestLines[2] == "HTTP/1.1")
-                    httpVersion = HTTPVersion.HTTP11;
-                else if (requestLines[2] == "HTTP/0.9")
-                    httpVersion = HTTPVersion.HTTP09;
-                return true;
-
-            }
-
-            else
-            {
-
-                return false;
-
-            }
-
-            //throw new NotImplementedException();
-
-
-
-
-
+            if (!ValidateIsURI(relativeURI)) return false;
+            return true;
         }
 
         private bool ValidateIsURI(string uri)
         {
-
             return Uri.IsWellFormedUriString(uri, UriKind.RelativeOrAbsolute);
-
         }
 
         private bool LoadHeaderLines()
         {
 
-
-            header_linespre = headerLineString.Split('\n');
-            for (int i = 0; i <= header_linespre.Length; i = i + 1)
+            string[] separator = new string[] { ": " };
+            for (int i = 1; i < this.Lines.Length - 2; i++)
             {
-                header_linessplit = header_linespre[i].Split(':');
-                headerLines.Add(header_linessplit[0], header_linessplit[1]);
-                string var = header_linessplit[0];
-
-
+                string[] headerSplit = Lines[i].Split(separator, StringSplitOptions.None);
+                if (headerSplit.Length < 2) return false;
+                this.HeaderLines.Add(headerSplit[0], headerSplit[1]);
             }
-            //dictionary number will be equals to number
-            if (headerLines.Count == header_linespre.Length)
-            {
-                return true;
-            }
-            //throw new NotImplementedException();
-
-
-            return false;
+            return true;
         }
 
         private bool ValidateBlankLine()
         {
 
-            if (String.IsNullOrEmpty(BlankLine))
+            if (String.IsNullOrEmpty(Lines[Lines.Length - 2]))
             {
                 return true;
             }
-
-            //throw new NotImplementedException();
             return false;
         }
 
