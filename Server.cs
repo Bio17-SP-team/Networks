@@ -23,17 +23,17 @@ namespace HTTPServer
             this.serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             IPEndPoint serverEIP = new IPEndPoint(IPAddress.Any, portNumber);
             serverSocket.Bind(serverEIP);
-
         }
 
         public void StartServer()
         {
             // TODO: Listen to connections, with large backlog.
             Console.WriteLine("Listening...", "/n");
-            serverSocket.Listen(200);
+            serverSocket.Listen(2000);
             // TODO: Accept connections in while loop and start a thread for each connection on function "Handle Connection"
             while (true)
             {
+
                 //TODO: accept connections and start thread for each accepted connection.
                 Socket clientSocket = this.serverSocket.Accept();
                 Console.WriteLine("New client accepted: {0}", clientSocket.RemoteEndPoint);
@@ -58,28 +58,23 @@ namespace HTTPServer
                 {
                     // TODO: Receive request
 
-                    byte[] req = new byte[1024];
+                    byte[] req = new byte[1024 * 1024];
                     int receivedLen = clientSock.Receive(req);
 
                     // TODO: break the while loop if receivedLen==0
                     if (receivedLen == 0)
                     {
                         Console.WriteLine("Client: {0} ended the connection", clientSock.RemoteEndPoint);
-                        break;                    }
+                        break; 
+                    }
 
                     // TODO: Create a Request object using received request string
-
-                    string received_request = Encoding.ASCII.GetString(req, 0, receivedLen);
+                    string received_request = Encoding.ASCII.GetString(req);
                     Request request = new Request(received_request);
-
                     // TODO: Call HandleRequest Method that returns the response
-
                     Response response = HandleRequest(request);
-
-                    // TODO: Send Response back to client
-                    
+                    // TODO: Send Response back to client 
                     clientSock.Send(Encoding.ASCII.GetBytes(response.ResponseString));
-
                 }
                 catch (Exception ex)
                 {
@@ -94,46 +89,41 @@ namespace HTTPServer
 
         Response HandleRequest(Request request)
         {
-            //throw new NotImplementedException();
-            string content;
             try
             {
+                //throw new NotImplementedException();
                 //TODO: check for bad request 
-                if (request.ParseRequest())
+                if (!request.ParseRequest())
+                    return new Response(StatusCode.BadRequest, "text/html", LoadDefaultPage(Configuration.BadRequestDefaultPageName), "");
+                //TODO: map the relativeURI in request to get the physical path of the resource.
+                string filepath = Path.Combine(Configuration.RootPath, request.relativeURI);
+                //TODO: check for redirect
+                string redirectionPath = GetRedirectionPagePathIFExist(request.relativeURI);
+                if (redirectionPath != "")
                 {
-
-                    //TODO: map the relativeURI in request to get the physical path of the resource.
-                    //"://docs.microsoft.com/en-us/dotnet/api/system.uri.localpath?view=net-6.0"
-                    Uri uri = new Uri(request.relativeURI);
-                    string filepath = uri.LocalPath;
-
-                    //TODO: check for redirect
-                    GetRedirectionPagePathIFExist(filepath);
-                    //TODO: check file exists 
-                    //TODO: read the physical file
-                    content = LoadDefaultPage(filepath);
-                    // Create OK response
-                    Response res = new Response(StatusCode.OK, "text/html", content, "");
-                    return res;
+                    return new Response(StatusCode.Redirect, "text/html", LoadDefaultPage(Configuration.RedirectionDefaultPageName), redirectionPath);
                 }
-                else
-                {
-                    Response res = new Response(StatusCode.BadRequest, "text/html", LoadDefaultPage(Configuration.BadRequestDefaultPageName), "");
-                    return res;
 
-                } 
-                    
-              
+                //TODO: check file exists 
+                if (!File.Exists(filepath))
+                {
+                    return new Response(StatusCode.NotFound, "text/html", LoadDefaultPage(Configuration.NotFoundDefaultPageName), "");
+                }
+
+                //TODO: read the physical file
+                StreamReader reader = new StreamReader(filepath);
+                string fileContent = reader.ReadToEnd();
+                reader.Close();
+
+                // Create OK response
+                Response res = new Response(StatusCode.OK, "text/html", fileContent, "");
+                return res;
             }
             catch (Exception ex)
             {
-                // TODO: log exception using Logger class
-
                 Logger.LogException(ex);
-
-                // TODO: in case of exception, return Internal Server Error. 
-                Response res2 = new Response(StatusCode.InternalServerError, "text/html", LoadDefaultPage(Configuration.InternalErrorDefaultPageName), "");
-                return res2;
+                // TODO: in case of exception, return Internal Server Error.
+                return new Response(StatusCode.InternalServerError, "text/html", LoadDefaultPage(Configuration.InternalErrorDefaultPageName), "");
             }
         }
 
@@ -141,13 +131,10 @@ namespace HTTPServer
         {
             // using Configuration.RedirectionRules return the redirected page path if exists else returns empty
 
-            foreach (KeyValuePair<string, string> entry in Configuration.RedirectionRules)
+
+            if (Configuration.RedirectionRules.ContainsKey(relativePath))
             {
-                // do something with entry.Value or entry.Key
-                if (entry.Key == relativePath)
-                {
-                    return entry.Value;
-                }
+                return Configuration.RedirectionRules[relativePath];
             }
 
             return string.Empty;
@@ -161,13 +148,19 @@ namespace HTTPServer
             string filePath = Path.Combine(Configuration.RootPath, defaultPageName);
             // TODO: check if filepath not exist log exception using Logger class and return empty string
 
-            if (!Directory.Exists(filePath))
+            if (!File.Exists(filePath))
             {
-                Logger.LogException(new DirectoryNotFoundException());
+                Logger.LogException(new FileNotFoundException());
                 return string.Empty;
             }
 
             // else read file and return its content
+
+            //StreamReader reader = new StreamReader(filePath);
+            //string file = reader.ReadToEnd();
+            //reader.Close();
+            //return file;
+
             string text = System.IO.File.ReadAllText(@filePath);
             return text;
         }
@@ -180,7 +173,7 @@ namespace HTTPServer
                 Configuration.RedirectionRules = new Dictionary<string, string>();
                 using (StreamReader file = new StreamReader(filePath))
                 {
-                    while(file.Peek() >= 0)
+                    while(!file.EndOfStream)
                     {
                         string filepathread = file.ReadLine();
                         string[]  header_linessplitresp = filepathread.Split(',');
