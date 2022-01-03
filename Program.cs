@@ -18,7 +18,6 @@ namespace HTTPServer
             Server s1 = new Server(1000, "redirectionRules.txt");
             Console.WriteLine("Started...");
             s1.StartServer();
-            Logger.close();
         }
 
         static void CreateRedirectionRulesFile()
@@ -27,8 +26,7 @@ namespace HTTPServer
 
             StreamWriter sr = new StreamWriter("redirectionRules.txt");
 
-            sr.Write("aboustus.html,");
-            sr.Write("aboutus2.html");
+            sr.WriteLine("aboutus.html, aboutus2.html");
             sr.Close();
 
             // each line in the file specify a redirection rule
