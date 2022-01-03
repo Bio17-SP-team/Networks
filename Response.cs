@@ -43,7 +43,22 @@ namespace HTTPServer
 
             responseString = GetStatusLine(code) + "\r\n" + GetHeaderLines(headerLines) + "\r\n" + content;
 
+            //if (!String.IsNullOrEmpty(redirectoinPath))
+            //{
+            //    redirectionResponse(redirectoinPath);
+            //}
+
         }
+
+
+        //private Response redirectionResponse(string redirectoinPath)
+        //{
+        //    StreamReader read = new StreamReader(redirectoinPath);
+        //    string redirectContent = read.ReadToEnd();
+        //    read.Close();
+
+        //    return new Response(StatusCode.OK, "text/html", redirectContent, "");
+        //}
 
 
         private string GetHeaderLines(List<string> headerlineslist)
